@@ -1,0 +1,35 @@
+[project]
+name = "kaptain"
+version = "0.1.0"
+description = "KMA-bAsed Pipeline for meTAgenomic specIes identification"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "bs4>=0.0.2",
+    "pandas>=2.3.2",
+    "pulp==2.7.0",
+    "pytest>=8.4.2",
+    "pyyaml>=6.0.2",
+    "snakemake>=7.32.4",
+    "yattag>=1.16.1",
+]
+
+[project.scripts]
+kaptain = "kaptain.__main__:main"
+
+[tool.setuptools.package-data]
+kaptain = ['resources/citations/*.json',
+        'resources/main_workflow.smk',
+        'resources/logo-sciensano.png',
+        'resources/usage.txt',
+        'resources/style.css',
+        'resources/thresholds.csv',
+        'resources/testdata/*',
+        'resources/testdata/database/*',
+       ]
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+tmp_path_retention_count = "3"
+tmp_path_retention_policy = "all"

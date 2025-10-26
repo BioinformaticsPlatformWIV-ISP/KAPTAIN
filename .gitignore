@@ -1,0 +1,20 @@
+#pycharm
+.idea
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+config.yml
+kt.log
+
+# Virtual environments
+.venv
+uv.lock
+
+#snakemake
+.snakemake
+

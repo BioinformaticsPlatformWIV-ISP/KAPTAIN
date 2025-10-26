@@ -1,0 +1,27 @@
+Usage Examples
+---------------
+
+1. Basic Classification:
+   kaptain --ont-in query.fq --db my_database --db_lookup my_database.lookup
+           --output results/ --subsampling 500M --fdr 5
+
+2. Multiple Queries:
+   kaptain --ont-in query.fq query2.fq --db my_database --db_lookup my_database.lookup
+           --output results/ --fdr 15
+
+3. Multiple FDR and Subsampling Settings:
+   kaptain --ont-in query.fq query.fq query.fq --db my_database --db_lookup my_database.lookup
+           --output results/ --subsampling 500M 500M None --fdr 15 10 1
+
+   This example will run the queries as:
+    | Query     | Subsample | FDR |
+    |-----------|-----------|-----|
+    | query.fq  | 500M      | 15  |
+    | query.fq  | 500M      | 10  |
+    | query2.fq | None      | 1   |
+
+
+   Both --fdr and --subsampling must either have:
+     - a single value (applied to all queries), or
+     - as many values as there are query files (applied pairwise). Multiple instances of the same query are allowed.
+---

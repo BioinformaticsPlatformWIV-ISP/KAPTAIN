@@ -1,0 +1,12 @@
+{
+  "type_of_reference": "JOUR",
+  "primary_title": "Rasusa: Randomly subsample sequencing reads to a specified coverage",
+  "first_authors": [
+    "Hall, Michael"
+  ],
+  "publication_year": "2022///",
+  "alternate_title3": "Bioinformatics",
+  "volume": "7",
+  "number": "69",
+  "doi": "10.21105/joss.03941"
+}
