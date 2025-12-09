@@ -61,37 +61,44 @@ def warning_message(query_info: dict) -> str:
     """
     Generate warning messages based on subsampling and yield thresholds.
     """
-    warning_icon = "&#10071"
+    icon = {"note": "&#8505;&#65039;",
+            "warning": "&#10071;"}
 
     n_bases_m = query_info["n_bases"] / 1_000_000
     subsampling = query_info["subsampling"]
-    subsample_value = int(subsampling.rstrip("M")) if subsampling else None
+    subsample_value = int(subsampling.rstrip("M")) if subsampling else 0
+
+    LOWER_YIELD = 200
+    UPPER_YIELD = 2000
+    ERROR_BOUND = 0.01  # 1%
+
+    LOWER_YIELD_LIMIT = LOWER_YIELD * (1 - ERROR_BOUND)
+    UPPER_YIELD_LIMIT = UPPER_YIELD * (1 + ERROR_BOUND)
+    SUBSAMPLE_VALUE_LIMIT = subsample_value * (1 - ERROR_BOUND)
 
     rules = [
         (
-            not subsampling,
-            "No subsampling setting was selected. The closest yield was therefore automatically selected."
+            "note",
+            n_bases_m < SUBSAMPLE_VALUE_LIMIT,
+            f"The sample's yield is below the requested subsample setting ({subsample_value}M). "
         ),
         (
-            n_bases_m < 200,
-            "The sample's yield is below the lowest possible setting (200M). "
+            "warning",
+            n_bases_m < LOWER_YIELD_LIMIT,
+            f"The sample's yield is below the lowest possible setting ({LOWER_YIELD}M). "
             "The set thresholds may not be appropriate."
         ),
         (
-            n_bases_m > 2000,
-            "The sample's yield is above the highest possible setting (2000M). "
+            "warning",
+            n_bases_m > UPPER_YIELD_LIMIT,
+            f"The sample's yield is above the highest possible setting ({UPPER_YIELD}M). "
             "The set thresholds may not be appropriate. Try downsampling if possible."
-        ),
-        (
-            subsample_value is not None and n_bases_m < subsample_value,
-            f"Your yield is below the subsample setting ({subsampling}). "
-            "The set thresholds may not be appropriate. Try downsampling lower if possible."
         ),
     ]
 
     warnings = [
-        f"{warning_icon} WARNING: {message}"
-        for condition, message in rules if condition
+        f"{icon[message_type]} {message}"
+        for message_type, condition, message in rules if condition
     ]
 
     return "\n".join(warnings)
@@ -113,14 +120,14 @@ def create_parameter_section(query_information_files: list[Path]) -> HtmlReportS
             query_information["query"],
             query_information["subsampling"] or "NA",
             query_information["n_bases"],
-            query_information["closest_yield"] if query_information["closest_yield"] != query_information["subsampling"] else "NA",
+            query_information["closest_yield"],
             query_information["fdr"],
             query_information["closest_threshold"],
             warning_message(query_information)
         ])
     section.add_table(data_table,
                       column_names=["Input Sample", "Requested Subsampling", "Final Yield (bases)", "Closest Yield Setting",
-                                    "Requested FDR", "Selected Template ID Threshold", "Warning"],
+                                    "Requested FDR", "Selected Template ID Threshold", "Note"],
                       table_attributes=[('class', 'data')]
                       )
 
