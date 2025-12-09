@@ -1,3 +1,4 @@
+import base64
 import logging
 from typing import Optional, List
 
@@ -20,12 +21,23 @@ class HtmlReport(HtmlBase):
         Initializes the report.
         :param filename: Filename
         :param output_dir: Output directory
-        :param include_js: (Optional) List of Javascript files that are included in the report
+        :param include_js: (Optional) List of JavaScript files that are included in the report
         """
         super(HtmlReport, self).__init__()
         self._filename = filename
         self._output_dir = output_dir
         self._include_js = include_js
+
+    @staticmethod
+    def _image_to_base64(path: Path) -> str:
+        """
+        Encode an image file as a data URI (base64).
+        """
+        mime = "image/png"
+        with path.open("rb") as f:
+            b64 = base64.b64encode(f.read()).decode("ascii")
+
+        return f"data:{mime};base64,{b64}"
 
     @property
     def output_dir(self) -> Path:
@@ -82,10 +94,9 @@ class HtmlReport(HtmlBase):
             raise ValueError("Can't add the pipeline header without an output directory")
         with self.get_tag('div', [('class', 'header')]):
             with self.get_tag('div', [('id', 'header_title')]):
-                self._doc.stag('img', src=LOGO_SCIENSANO.name, alt='Sciensano Belgium', id='header_logo',
+                self._doc.stag('img', src=self._image_to_base64(LOGO_SCIENSANO), alt='Sciensano Belgium', id='header_logo',
                                height=80)
                 self.add_text(f"{pipeline_name} report")
-        shutil.copy(LOGO_SCIENSANO, self._output_dir)
 
     def to_html(self) -> str:
         """
