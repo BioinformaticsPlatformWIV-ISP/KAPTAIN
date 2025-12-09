@@ -138,13 +138,20 @@ rule merge_kma_tsv_mapstat_and_lookup:
 
         lookup = pd.read_table(params.lookup, names=['full_name', 'length', 'accession', 'seq_type', 'species_name'])
 
-        missing = set(tsv_mapstat['Template_Name']) - set(lookup['full_name'])
+        tsv_mapstat['Template_Name_Key'] = tsv_mapstat['Template_Name'].str.split().str[0]
+        lookup['full_name_key'] = lookup['full_name'].str.split().str[0]
+
+
+        missing = set(tsv_mapstat['Template_Name_Key']) - set(lookup['full_name_key'])
         if missing:
             raise AssertionError(f"Missing Template_Names in lookup: {missing}")
 
-        present_accessions = tsv_mapstat['Template_Name'].map(lookup.set_index('full_name')['accession'])
+        present_accessions = tsv_mapstat['Template_Name_Key'].map(lookup.set_index('full_name_key')['accession'])
         lookup_present_accessions = lookup.loc[lookup['accession'].isin(present_accessions)]
-        tsv_mapstat_lookup = tsv_mapstat.merge(lookup_present_accessions, left_on='Template_Name', right_on='full_name', how="right")
+        tsv_mapstat_lookup = tsv_mapstat.merge(lookup_present_accessions,
+                                               left_on='Template_Name_Key',
+                                               right_on='full_name_key', how="right"
+        )
 
         tsv_mapstat_lookup.to_csv(output.tsv_mapstat_lookup, sep='\t', header=True, index=False)
 
