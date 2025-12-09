@@ -255,14 +255,11 @@ rule query_information:
         # Use the right threshold of the interval
         thresholds["right"] = thresholds['threshold'].str.extract(r',\s*([0-9.]+)\]').astype(float)
         thresholds = thresholds["right"].unstack(sort=False).round(2)
-        if params.sample_yield != "full":
-            closest_yield = params.sample_yield
-            closest_threshold = thresholds.at[params.sample_yield, f'FDR {params.fdr}%']
-        else:
-            sample_yield_int = [int(sample_yield[:-1]) for sample_yield in thresholds.index.get_level_values("yield").unique()]
-            closest_yield_int = min(sample_yield_int, key=lambda v: abs(v - n_bases / 1_000_000))
-            closest_yield = f'{closest_yield_int}M'
-            closest_threshold = thresholds.at[closest_yield, f'FDR {params.fdr}%']
+
+        sample_yield_int = [int(sample_yield[:-1]) for sample_yield in thresholds.index.get_level_values("yield").unique()]
+        closest_yield_int = min(sample_yield_int, key=lambda v: abs(v - n_bases / 1_000_000))
+        closest_yield = f'{closest_yield_int}M'
+        closest_threshold = thresholds.at[closest_yield, f'FDR {params.fdr}%']
 
         data = {
             "query": params.sample_name,
