@@ -125,7 +125,7 @@ class KAPTAIN:
         """
         queries = {}
         for ont_in, fdr, subsampling in zip(self._args.ont_in, self._args.fdr, self._args.subsampling):
-            name = Path(ont_in).stem
+            name = Path(ont_in).name[: -sum(len(s) for s in Path(ont_in).suffixes)]
             entry = queries.setdefault(name, {"file": ont_in, "combinations": []})
             entry["combinations"].append({
                 "fdr": fdr,
