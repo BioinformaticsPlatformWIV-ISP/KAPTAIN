@@ -33,6 +33,7 @@ def create_analysis_info_section(config_: Dict[str, Any]) -> HtmlReportSection:
 
     return section
 
+
 def create_thresholds_table(thresholds: pd.DataFrame) -> HtmlReportSection:
     """
     Creates the analysis info section.
@@ -48,50 +49,60 @@ def create_thresholds_table(thresholds: pd.DataFrame) -> HtmlReportSection:
                       column_names=[""] + thresholds.columns.tolist(),
                       table_attributes=[('class', 'matrix')])
     section.add_paragraph(
-        """Based on ten defined mock communities, the expected precision is 100% - FDR X% if the above thresholds are applied.
-        E.g., the precision is 95% for FDR 5% (100% - 5%). This means 95% of detected species above this threshold can be considered correct."""
+        f"Based on ten defined mock communities, the expected precision is 100% - FDR X% if the above thresholds are applied.\n"
+        f"E.g., the precision is 95% for FDR 5% (100% - 5%)."
+        f"This means 95% of detected species above this threshold can be considered correct."
     )
 
     return section
+
 
 def warning_message(query_info: dict) -> str:
     """
     Generate warning messages based on subsampling and yield thresholds.
     """
-    warning_icon = "&#10071"
+    icon = {"note": "&#8505;&#65039;",
+            "warning": "&#10071;"}
 
     n_bases_m = query_info["n_bases"] / 1_000_000
     subsampling = query_info["subsampling"]
-    subsample_value = int(subsampling.rstrip("M")) if subsampling else None
+    subsample_value = int(subsampling.rstrip("M")) if subsampling else 0
+
+    LOWER_YIELD = 200
+    UPPER_YIELD = 2000
+    ERROR_BOUND = 0.01  # 1%
+
+    LOWER_YIELD_LIMIT = LOWER_YIELD * (1 - ERROR_BOUND)
+    UPPER_YIELD_LIMIT = UPPER_YIELD * (1 + ERROR_BOUND)
+    SUBSAMPLE_VALUE_LIMIT = subsample_value * (1 - ERROR_BOUND)
 
     rules = [
         (
-            not subsampling,
-            "No subsampling setting was selected. The closest yield was therefore automatically selected."
+            "note",
+            n_bases_m < SUBSAMPLE_VALUE_LIMIT,
+            f"The sample's yield is below the requested subsample setting ({subsample_value}M). "
         ),
         (
-            n_bases_m < 200,
-            "The sample's yield is below the lowest possible setting (200M). "
+            "warning",
+            n_bases_m < LOWER_YIELD_LIMIT,
+            f"The sample's yield is below the lowest possible setting ({LOWER_YIELD}M). "
             "The set thresholds may not be appropriate."
         ),
         (
-            n_bases_m > 2000,
-            "The sample's yield is above the highest possible setting (2000M). "
+            "warning",
+            n_bases_m > UPPER_YIELD_LIMIT,
+            f"The sample's yield is above the highest possible setting ({UPPER_YIELD}M). "
             "The set thresholds may not be appropriate. Try downsampling if possible."
-        ),
-        (
-            subsample_value is not None and n_bases_m < subsample_value,
-            f"Your yield is below the subsample setting ({subsampling}). "
-            "The set thresholds may not be appropriate. Try downsampling lower if possible."
         ),
     ]
 
     warnings = [
-        f"{warning_icon} WARNING: {message}"
-        for condition, message in rules if condition
+        f"{icon[message_type]} {message}"
+        for message_type, condition, message in rules if condition
     ]
 
     return "\n".join(warnings)
+
 
 def create_parameter_section(query_information_files: list[Path]) -> HtmlReportSection:
     """
@@ -106,20 +117,22 @@ def create_parameter_section(query_information_files: list[Path]) -> HtmlReportS
         with open(query_information_file, "r") as f:
             query_information = json.load(f)
         data_table.append([
-                           query_information["query"],
-                           query_information["subsampling"] or "NA",
-                            query_information["n_bases"],
-                           query_information["closest_yield"] if query_information["closest_yield"] != query_information["subsampling"] else "NA",
-                           query_information["fdr"],
-                            query_information["closest_threshold"],
-                            warning_message(query_information)
-                          ])
+            query_information["query"],
+            query_information["subsampling"] or "NA",
+            query_information["n_bases"],
+            query_information["closest_yield"],
+            query_information["fdr"],
+            query_information["closest_threshold"],
+            warning_message(query_information)
+        ])
     section.add_table(data_table,
-                      column_names=["Input Sample", "Requested Subsampling", "Final Yield (bases)", "Closest Yield Setting", "Requested FDR", "Selected Template ID Threshold", "Warning"],
+                      column_names=["Input Sample", "Requested Subsampling", "Final Yield (bases)", "Closest Yield Setting",
+                                    "Requested FDR", "Selected Template ID Threshold", "Note"],
                       table_attributes=[('class', 'data')]
                       )
 
     return section
+
 
 def __get_colored_cell_template_id(value: float, threshold: float) -> HtmlTableCell:
     """
@@ -135,6 +148,7 @@ def __get_colored_cell_template_id(value: float, threshold: float) -> HtmlTableC
 
     return HtmlTableCell(value_str, color=color)
 
+
 def create_mapping_section(query_information_files: list[Path]) -> HtmlReportSection:
     """
     Creates the read mapping section.
@@ -149,9 +163,9 @@ def create_mapping_section(query_information_files: list[Path]) -> HtmlReportSec
         mapping_result_file = query_information.get("query_file_path")
         sample_name = Path(mapping_result_file).parts[-4]
         kma_results = (pd.read_table(mapping_result_file,
-                                    usecols=["genome", "species_name", "Read_Count_Aln",
-                                             "Template_Identity", 'Template_Coverage', 'Template_Depth'],
-                                    )
+                                     usecols=["genome", "species_name", "Read_Count_Aln",
+                                              "Template_Identity", 'Template_Coverage', 'Template_Depth'],
+                                     )
                        .sort_values(by=["Template_Identity"], ascending=False)
                        .round(3)
                        .rename(columns={"genome": "Accession",
@@ -160,11 +174,12 @@ def create_mapping_section(query_information_files: list[Path]) -> HtmlReportSec
                                         "Template_Identity": "Template ID (%)",
                                         'Template_Coverage': "Template Coverage (%)",
                                         'Template_Depth': "Template Depth"
-                                       }
-                                )
+                                        }
+                               )
                        )
         header = kma_results.columns
-        section.add_header(f"{sample_name.upper()} - {query_information['subsampling'] or 'FULL'} - FDR {query_information['fdr']}%", level=3)
+        section.add_header(f"{sample_name.upper()} - {query_information['subsampling'] or 'FULL'} - FDR {query_information['fdr']}%",
+                           level=3)
 
         section.add_table([[row["Accession"],
                             row["Species"],
@@ -174,9 +189,9 @@ def create_mapping_section(query_information_files: list[Path]) -> HtmlReportSec
                             row["Template Depth"],
                             ] for row in kma_results.to_dict('records')], header, [('class', 'data')])
         section.add_paragraph(
-            f" Species with a template ID below or above the threshold {query_information['closest_threshold']:.2f}% are displayed in red or green, respectively."
-            )
-
+            f"Species with a template ID below or above the threshold {query_information['closest_threshold']:.2f}% are displayed in red "
+            f"or green, respectively."
+        )
 
     return section
 

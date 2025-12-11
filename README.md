@@ -120,15 +120,19 @@ kma index -i database.fasta -o kma_db
 ```
 This will make four files: `kma_db.length.b`, `kma_db.comp.b`, `kma_db.name` and `kma_db.seq.b`.  
 Additionally, a lookup file is needed (`--db_lookup`) with metadata on each sequence in the database.  
-The file should be without headers and tab-separated, that contains following columns:
+The file should be without headers and tab-separated, that contains the following columns:
 
 | Column        | Description                                          |
 |---------------|------------------------------------------------------|
-| Full Name     | Full header name of sequence in the database         |
+| Header ID\*   | Header ID of sequence in the database                |
 | Length        | Length sequence                                      |
 | Accession     | Accession of genome/assembly the sequence belongs to |
 | Sequence Type | Either 'Chromosome' or 'Plasmid'                     |
 | Species Name  | E.g., Escherichia coli                               |
+
+\* Note that the header ID is used, and not the full header line. 
+The header ID are all characters before the first space. 
+**Each header ID should be unique**.
 
 ## CONTACT
 [Create an issue](https://github.com/BioinformaticsPlatformWIV-ISP/KAPTAIN/issues) to report bugs, propose new functions or ask for help.

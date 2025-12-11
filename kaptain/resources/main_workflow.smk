@@ -138,13 +138,20 @@ rule merge_kma_tsv_mapstat_and_lookup:
 
         lookup = pd.read_table(params.lookup, names=['full_name', 'length', 'accession', 'seq_type', 'species_name'])
 
-        missing = set(tsv_mapstat['Template_Name']) - set(lookup['full_name'])
+        tsv_mapstat['Template_Name_Key'] = tsv_mapstat['Template_Name'].str.split().str[0]
+        lookup['full_name_key'] = lookup['full_name'].str.split().str[0]
+
+
+        missing = set(tsv_mapstat['Template_Name_Key']) - set(lookup['full_name_key'])
         if missing:
             raise AssertionError(f"Missing Template_Names in lookup: {missing}")
 
-        present_accessions = tsv_mapstat['Template_Name'].map(lookup.set_index('full_name')['accession'])
+        present_accessions = tsv_mapstat['Template_Name_Key'].map(lookup.set_index('full_name_key')['accession'])
         lookup_present_accessions = lookup.loc[lookup['accession'].isin(present_accessions)]
-        tsv_mapstat_lookup = tsv_mapstat.merge(lookup_present_accessions, left_on='Template_Name', right_on='full_name', how="right")
+        tsv_mapstat_lookup = tsv_mapstat.merge(lookup_present_accessions,
+                                               left_on='Template_Name_Key',
+                                               right_on='full_name_key', how="right"
+        )
 
         tsv_mapstat_lookup.to_csv(output.tsv_mapstat_lookup, sep='\t', header=True, index=False)
 
@@ -248,14 +255,11 @@ rule query_information:
         # Use the right threshold of the interval
         thresholds["right"] = thresholds['threshold'].str.extract(r',\s*([0-9.]+)\]').astype(float)
         thresholds = thresholds["right"].unstack(sort=False).round(2)
-        if params.sample_yield != "full":
-            closest_yield = params.sample_yield
-            closest_threshold = thresholds.at[params.sample_yield, f'FDR {params.fdr}%']
-        else:
-            sample_yield_int = [int(sample_yield[:-1]) for sample_yield in thresholds.index.get_level_values("yield").unique()]
-            closest_yield_int = min(sample_yield_int, key=lambda v: abs(v - n_bases / 1_000_000))
-            closest_yield = f'{closest_yield_int}M'
-            closest_threshold = thresholds.at[closest_yield, f'FDR {params.fdr}%']
+
+        sample_yield_int = [int(sample_yield[:-1]) for sample_yield in thresholds.index.get_level_values("yield").unique()]
+        closest_yield_int = min(sample_yield_int, key=lambda v: abs(v - n_bases / 1_000_000))
+        closest_yield = f'{closest_yield_int}M'
+        closest_threshold = thresholds.at[closest_yield, f'FDR {params.fdr}%']
 
         data = {
             "query": params.sample_name,
