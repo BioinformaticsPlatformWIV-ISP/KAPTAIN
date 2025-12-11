@@ -1,6 +1,6 @@
 [project]
 name = "kaptain"
-version = "0.1.0"
+version = "0.2.0"
 description = "KMA-bAsed Pipeline for meTAgenomic specIes identification"
 readme = "README.md"
 requires-python = ">=3.10"
