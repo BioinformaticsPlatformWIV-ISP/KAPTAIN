@@ -5,4 +5,7 @@ _pkg_name = "kaptain"
 try:
     __version__ = version(_pkg_name)
 except PackageNotFoundError:
-    __version__ = "0.1.0"
+    raise RuntimeError(
+        "Package metadata not found. "
+        "Install the package before importing it."
+    )
