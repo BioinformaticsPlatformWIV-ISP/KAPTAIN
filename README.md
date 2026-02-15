@@ -45,9 +45,12 @@ pip install .
 
 ## Database
 
-In order for the tool to work, a database is needed (`--db`).
+In order for the tool to work, a database is needed (`--db`).  
+The default database can be downloaded through one of the two options, alongside a lookup file with metadata of the entries in the database (`--db-lookup`):
+- Zenodo: https://doi.org/10.5281/zenodo.17435875
+- FTP: https://bioit-ftp.sciensano.be/kma/
+
 This database contains (complete) genomes.
-The default database can be downloaded from FTP, alongside a lookup file with metadata of the entries in the database (`--db-lookup`).  
 See [Custom database](#custom-database) for information on how to provide a custom database.
 <!-- TODO provide link and command once FTP is online -->
 
